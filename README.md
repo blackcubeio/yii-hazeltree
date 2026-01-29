@@ -16,7 +16,7 @@ PHP 8.3+ nested set implementation using rational numbers for Yii3 framework.
 [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE.md)
 [![PHP Version](https://img.shields.io/badge/php-8.3%2B-blue.svg)](https://php.net)
 [![Packagist Version](https://img.shields.io/packagist/v/blackcube/yii-hazeltree.svg)](https://packagist.org/packages/blackcube/yii-hazeltree)
-[![License](https://img.shields.io/badge/Blackcube-Warning-orange)](BLACKCUBE_WARNING.md)
+[![Warning](https://img.shields.io/badge/Blackcube-Warning-orange)](BLACKCUBE_WARNING.md)
 
 > **Attribution**
 >

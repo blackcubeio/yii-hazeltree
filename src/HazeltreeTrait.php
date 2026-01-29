@@ -754,6 +754,84 @@ trait HazeltreeTrait
         return true;
     }
 
+    // ==================== LEVEL CALCULATION FOR MOVES ====================
+
+    /**
+     * Calculate the maximum depth of this node's subtree.
+     * Returns 0 if node has no children.
+     *
+     * @return int The depth of the deepest descendant relative to this node
+     */
+    public function getSubtreeDepth(): int
+    {
+        $maxLevel = $this->level;
+        $descendants = $this->relativeQuery()->children()->includeDescendants();
+        foreach ($descendants->each() as $descendant) {
+            if ($descendant->getLevel() > $maxLevel) {
+                $maxLevel = $descendant->getLevel();
+            }
+        }
+        return $maxLevel - $this->level;
+    }
+
+    /**
+     * Calculate the maximum level that would result from moving this node BEFORE target.
+     * Includes all descendants.
+     *
+     * @param HazeltreeInterface $target The target node
+     * @return int The maximum level after move
+     */
+    public function getMaxLevelIfMoveBefore(HazeltreeInterface $target): int
+    {
+        $newLevel = $target->getLevel();
+        return $newLevel + $this->getSubtreeDepth();
+    }
+
+    /**
+     * Calculate the maximum level that would result from moving this node AFTER target.
+     * Includes all descendants.
+     *
+     * @param HazeltreeInterface $target The target node
+     * @return int The maximum level after move
+     */
+    public function getMaxLevelIfMoveAfter(HazeltreeInterface $target): int
+    {
+        $newLevel = $target->getLevel();
+        return $newLevel + $this->getSubtreeDepth();
+    }
+
+    /**
+     * Calculate the maximum level that would result from moving this node INTO target (as child).
+     * Includes all descendants.
+     *
+     * @param HazeltreeInterface $target The target node
+     * @return int The maximum level after move
+     */
+    public function getMaxLevelIfMoveInto(HazeltreeInterface $target): int
+    {
+        $newLevel = $target->getLevel() + 1;
+        return $newLevel + $this->getSubtreeDepth();
+    }
+
+    /**
+     * Check if moving this node to a position would exceed the maximum allowed level.
+     *
+     * @param HazeltreeInterface $target The target node
+     * @param string $mode The move mode: 'before', 'after', or 'into'
+     * @param int $maxLevel The maximum allowed level
+     * @return bool True if the move would exceed maxLevel
+     */
+    public function wouldExceedMaxLevel(HazeltreeInterface $target, string $mode, int $maxLevel): bool
+    {
+        $resultLevel = match ($mode) {
+            'before' => $this->getMaxLevelIfMoveBefore($target),
+            'after' => $this->getMaxLevelIfMoveAfter($target),
+            'into' => $this->getMaxLevelIfMoveInto($target),
+            default => throw new \InvalidArgumentException("Invalid move mode: $mode"),
+        };
+        return $resultLevel > $maxLevel;
+    }
+
     // ==================== DELETE OPERATIONS ====================
 
     /**

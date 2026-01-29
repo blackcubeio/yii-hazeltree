@@ -1289,4 +1289,134 @@ final class HazeltreeTraitCest
             $node->left = 1.0;
         });
     }
+
+    // ==================== Level Calculation tests ====================
+
+    public function testGetSubtreeDepthNoChildren(HazeltreeTraitTester $I): void
+    {
+        $rootId = $this->factory->insert('Root', '1');
+        $root = $this->factory->findById($rootId);
+
+        $I->assertEquals(0, $root->getSubtreeDepth());
+    }
+
+    public function testGetSubtreeDepthOneLevel(HazeltreeTraitTester $I): void
+    {
+        $rootId = $this->factory->insert('Root', '1');
+        $this->factory->insert('Child 1', '1.1');
+        $this->factory->insert('Child 2', '1.2');
+        $root = $this->factory->findById($rootId);
+
+        $I->assertEquals(1, $root->getSubtreeDepth());
+    }
+
+    public function testGetSubtreeDepthTwoLevels(HazeltreeTraitTester $I): void
+    {
+        $rootId = $this->factory->insert('Root', '1');
+        $this->factory->insert('Child', '1.1');
+        $this->factory->insert('Grandchild', '1.1.1');
+        $root = $this->factory->findById($rootId);
+
+        $I->assertEquals(2, $root->getSubtreeDepth());
+    }
+
+    public function testGetSubtreeDepthFromMiddleNode(HazeltreeTraitTester $I): void
+    {
+        $this->factory->insert('Root', '1');
+        $childId = $this->factory->insert('Child', '1.1');
+        $this->factory->insert('Grandchild 1', '1.1.1');
+        $this->factory->insert('Grandchild 2', '1.1.2');
+        $this->factory->insert('Great-grandchild', '1.1.1.1');
+        $child = $this->factory->findById($childId);
+
+        $I->assertEquals(2, $child->getSubtreeDepth());
+    }
+
+    public function testGetMaxLevelIfMoveBefore(HazeltreeTraitTester $I): void
+    {
+        $rootId = $this->factory->insert('Root', '1');
+        $sourceId = $this->factory->insert('Source', '2');
+        $this->factory->insert('Source Child', '2.1');
+        $root = $this->factory->findById($rootId);
+        $source = $this->factory->findById($sourceId);
+
+        // Moving source (level 1) + subtree (depth 1) before root (level 1)
+        // Result: source would be at level 1, child at level 2
+        $I->assertEquals(2, $source->getMaxLevelIfMoveBefore($root));
+    }
+
+    public function testGetMaxLevelIfMoveAfter(HazeltreeTraitTester $I): void
+    {
+        $rootId = $this->factory->insert('Root', '1');
+        $sourceId = $this->factory->insert('Source', '2');
+        $this->factory->insert('Source Child', '2.1');
+        $root = $this->factory->findById($rootId);
+        $source = $this->factory->findById($sourceId);
+
+        // Moving source (level 1) + subtree (depth 1) after root (level 1)
+        $I->assertEquals(2, $source->getMaxLevelIfMoveAfter($root));
+    }
+
+    public function testGetMaxLevelIfMoveInto(HazeltreeTraitTester $I): void
+    {
+        $rootId = $this->factory->insert('Root', '1');
+        $sourceId = $this->factory->insert('Source', '2');
+        $this->factory->insert('Source Child', '2.1');
+        $root = $this->factory->findById($rootId);
+        $source = $this->factory->findById($sourceId);
+
+        // Moving source (will be level 2) + subtree (depth 1) into root (level 1)
+        // Result: source would be at level 2, child at level 3
+        $I->assertEquals(3, $source->getMaxLevelIfMoveInto($root));
+    }
+
+    public function testWouldExceedMaxLevelReturnsFalse(HazeltreeTraitTester $I): void
+    {
+        $rootId = $this->factory->insert('Root', '1');
+        $sourceId = $this->factory->insert('Source', '2');
+        $this->factory->insert('Source Child', '2.1');
+        $root = $this->factory->findById($rootId);
+        $source = $this->factory->findById($sourceId);
+
+        // Max level 5, moving into root would give level 3 max
+        $I->assertFalse($source->wouldExceedMaxLevel($root, 'into', 5));
+        $I->assertFalse($source->wouldExceedMaxLevel($root, 'before', 5));
+        $I->assertFalse($source->wouldExceedMaxLevel($root, 'after', 5));
+    }
+
+    public function testWouldExceedMaxLevelReturnsTrue(HazeltreeTraitTester $I): void
+    {
+        $rootId = $this->factory->insert('Root', '1');
+        $sourceId = $this->factory->insert('Source', '2');
+        $this->factory->insert('Source Child', '2.1');
+        $root = $this->factory->findById($rootId);
+        $source = $this->factory->findById($sourceId);
+
+        // Max level 2, moving into root would give level 3 max
+        $I->assertTrue($source->wouldExceedMaxLevel($root, 'into', 2));
+    }
+
+    public function testWouldExceedMaxLevelExactBoundary(HazeltreeTraitTester $I): void
+    {
+        $rootId = $this->factory->insert('Root', '1');
+        $sourceId = $this->factory->insert('Source', '2');
+        $this->factory->insert('Source Child', '2.1');
+        $root = $this->factory->findById($rootId);
+        $source = $this->factory->findById($sourceId);
+
+        // Max level 3, moving into root would give exactly level 3
+        $I->assertFalse($source->wouldExceedMaxLevel($root, 'into', 3));
+    }
+
+    public function testWouldExceedMaxLevelInvalidModeThrows(HazeltreeTraitTester $I): void
+    {
+        $rootId = $this->factory->insert('Root', '1');
+        $sourceId = $this->factory->insert('Source', '2');
+        $root = $this->factory->findById($rootId);
+        $source = $this->factory->findById($sourceId);
+
+        $I->expectThrowable(\InvalidArgumentException::class, function () use ($source, $root) {
+            $source->wouldExceedMaxLevel($root, 'invalid', 5);
+        });
+    }
 }
