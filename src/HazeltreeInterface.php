@@ -57,4 +57,29 @@ interface HazeltreeInterface
      * Accepts a Node or a path string (e.g., '1.2.3').
      */
     public function saveAfter(HazeltreeInterface|string $target, ?array $attributeNames = null): bool;
+
+    /**
+     * Calculate the maximum depth of this node's subtree.
+     */
+    public function getSubtreeDepth(): int;
+
+    /**
+     * Calculate the maximum level that would result from moving this node BEFORE target.
+     */
+    public function getMaxLevelIfMoveBefore(HazeltreeInterface $target): int;
+
+    /**
+     * Calculate the maximum level that would result from moving this node AFTER target.
+     */
+    public function getMaxLevelIfMoveAfter(HazeltreeInterface $target): int;
+
+    /**
+     * Calculate the maximum level that would result from moving this node INTO target.
+     */
+    public function getMaxLevelIfMoveInto(HazeltreeInterface $target): int;
+
+    /**
+     * Check if moving this node would exceed the maximum allowed level.
+     */
+    public function wouldExceedMaxLevel(HazeltreeInterface $target, string $mode, int $maxLevel): bool;
 }
